@@ -19,10 +19,12 @@ class TelaController:
         time.sleep(0.5)
         self.lcd.clear()
 
-    def tela_inicial(self):
+    def tela_inicial(self, msg = ""):
         self.lcd.move_to(0, 0)
         self.lcd.putstr("Iniciando Sistema...")
-        time.sleep(1)
+        self.lcd.move_to(0, 1)
+        self.lcd.putstr(f"{msg}")
+        time.sleep(4)
         self.lcd.clear()
         self.lcd.move_to(0, 0)
         self.lcd.putstr("Sistema Iniciado!")
@@ -68,9 +70,9 @@ class TelaController:
         self.tela_ativa = self.TELA_CONFIG_DIREITO
         return self.tela_ativa
 
-    def executa_tela(self, tela_ativa):
+    def executa_tela(self, tela_ativa, msg = ""):
         if tela_ativa == self.TELA_INICIAL:
-            self.tela_inicial()
+            self.tela_inicial(msg=msg)
             time.sleep_ms(5)
         elif tela_ativa == self.TELA_EXECUCAO:
             self.tela_execucao()
@@ -82,10 +84,21 @@ class TelaController:
             self.tela_config_direito()
             time.sleep_ms(5)
         else:
-            self.tela_inicial()
+            self.tela_inicial(msg=msg)
             
         self.tela_ativa = tela_ativa
         return self.tela_ativa
+    def atualiza_contador(self, contador):
+        self.lcd.move_to(0, 3)
+        self.lcd.putstr(f"Contador: {contador}")
+        return self.tela_ativa
+    
+    def executando_parado(self, status):
+        self.lcd.move_to(0, 0)
+        if status:
+            self.lcd.putstr("Executando...       ")
+        else:
+            self.lcd.putstr("Parado...           ")
 
 if __name__ == "__main__":
     controller = TelaController()
