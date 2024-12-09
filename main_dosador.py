@@ -19,10 +19,10 @@ class MotorController:
         self.botao_1 = Pin(7, Pin.IN, Pin.PULL_UP)
         self.botao_2 = Pin(10, Pin.IN, Pin.PULL_UP)
 
-        self.VOLTA_COMPLETA = 96
+        self.VOLTA_COMPLETA = 200
         
-        self.TEMPO_ENCHER = 2000
-        self.TEMPO_PULSO = 500
+        self.TEMPO_ENCHER = 500
+        self.TEMPO_PULSO = 250
         self.TEMPO_PULSO_MOTOR = 5
         self.contador = 0
         
@@ -60,7 +60,7 @@ class MotorController:
         self.enable_pin.value(0)  # Ativa o motor de passo
         while True:
             if self.inicia_motor:
-                for _ in range(self.VOLTA_COMPLETA * 2):  # N passos para duas voltas completas
+                for _ in range(self.VOLTA_COMPLETA * (3+(1/2))*2 ):  # N passos para duas voltas completas
                     if self.stop_thread:
                         break
                     self.step_pin.value(1)
