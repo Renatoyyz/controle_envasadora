@@ -16,14 +16,24 @@ class MotorController:
         self.stop_button = Pin(12, Pin.IN, Pin.PULL_UP)  # Botão para parar a thread
         self.output1 = Pin(4, Pin.OUT)
         self.output2 = Pin(3, Pin.OUT)
+        self.antpingo_e1 = Pin(11, Pin.OUT)
+        self.antpingo_e2 = Pin(12, Pin.OUT)
+        
+        self.antpingo_e1.value(1) # Inicia desligado
+        self.antpingo_e2.value(1) # Inicia desligado
+        
         self.botao_1 = Pin(7, Pin.IN, Pin.PULL_UP)
         self.botao_2 = Pin(10, Pin.IN, Pin.PULL_UP)
 
         self.VOLTA_COMPLETA = 200
+        self.ANTI_PINGO_AMBOS = 0 # Se for 0 aciona anti pingo nas duas bombas
+        self.ANTI_PINGO_E1 = 1 # Se for 1 aciona anti pingo na envasadora 1
+        self.ANTI_PINGO_E2 = 2 # Se for 2 aciona anti pingo na envasadora 2
+
         
         self.TEMPO_ENCHER = 500
         self.TEMPO_PULSO = 250
-        self.TEMPO_PULSO_MOTOR = 5
+        self.TEMPO_PULSO_MOTOR = 1
         self.contador = 0
         
         self.csv = Csv(labels=['contador'])
@@ -60,7 +70,7 @@ class MotorController:
         self.enable_pin.value(0)  # Ativa o motor de passo
         while True:
             if self.inicia_motor:
-                for _ in range(self.VOLTA_COMPLETA * (3+(1/2))*2 ):  # N passos para duas voltas completas
+                for _ in range(self.VOLTA_COMPLETA * (3+(1/2))*2):  # N passos para duas voltas completas
                     if self.stop_thread:
                         break
                     self.step_pin.value(1)
@@ -122,28 +132,28 @@ class MotorController:
                 if self.digital_input1.value() == 0 and self.digital_input2.value() == 0 and self.inicia_motor == False:
                     self.output1.value(0)
                     self.output2.value(0)
-                    time.sleep_ms(100)
+                    time.sleep_ms(self.TEMPO_PULSO)
                     self.output1.value(1)
                     self.output2.value(1)
-                    self.espera_encher()
+                    self.espera_encher(acao=self.ANTI_PINGO_AMBOS)
                     self.contador += 2
                     self.csv.update_value(1, 0, f"{self.contador}")
                     self.telas.atualiza_contador(self.contador)
                     
                 elif self.digital_input1.value() == 0 and self.digital_input2.value() == 1 and self.inicia_motor == False:
                     self.output1.value(0)
-                    time.sleep_ms(100)
+                    time.sleep_ms(self.TEMPO_PULSO)
                     self.output1.value(1)
-                    self.espera_encher()
+                    self.espera_encher(acao=self.ANTI_PINGO_E1)
                     self.contador += 1
                     self.csv.update_value(1, 0, f"{self.contador}")
                     self.telas.atualiza_contador(self.contador)
                     
                 elif self.digital_input1.value() == 1 and self.digital_input2.value() == 0 and self.inicia_motor == False:
                     self.output2.value(0)
-                    time.sleep_ms(100)
+                    time.sleep_ms(self.TEMPO_PULSO)
                     self.output2.value(1)
-                    self.espera_encher()
+                    self.espera_encher(acao=self.ANTI_PINGO_E2)
                     self.contador += 1
                     self.csv.update_value(1, 0, f"{self.contador}")
                     self.telas.atualiza_contador(self.contador)
@@ -153,16 +163,32 @@ class MotorController:
                     self.output2.value(1)
                     self.telas.atualiza_contador(self.contador)
                     self.inicia_motor = True
+                    
             elif self.telas.tela_ativa != self.telas.TELA_EXECUCAO:
                 self.inicia_motor = False
                 self.reset_botao_2 =  False
             
             time.sleep_ms(100)  # Pequena pausa para evitar uso excessivo da CPU
             
-    def espera_encher(self):
+    def espera_encher(self, acao):
         print("Enchendo....")
         time.sleep_ms(self.TEMPO_ENCHER)
         self.inicia_motor = True
+        if acao == self.ANTI_PINGO_AMBOS:
+            self.antpingo_e1.value(0)
+            self.antpingo_e1.value(0)
+            time.sleep_ms(100)
+            self.antpingo_e1.value(1)
+            self.antpingo_e1.value(1)
+        elif acao == self.ANTI_PINGO_E1:
+            self.antpingo_e1.value(0)
+            time.sleep_ms(100)
+            self.antpingo_e1.value(1)
+        elif acao == self.ANTI_PINGO_E2:
+            self.antpingo_e2.value(0)
+            time.sleep_ms(100)
+            self.antpingo_e2.value(1)
+        
 
     def start(self):
         # Inicia a thread para controlar o motor de passo no núcleo 1
@@ -173,3 +199,6 @@ class MotorController:
 if __name__ == "__main__":
     controller = MotorController()
     controller.start()
+
+
+
