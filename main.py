@@ -1,6 +1,6 @@
 import _thread
 import time
-from machine import Pin, I2C
+from machine import Pin, I2C, PWM
 from telas import TelaController
 from Csv import Csv
 
@@ -11,19 +11,21 @@ class MotorController:
         # Configuração dos pinos
         self.step_pin = Pin(1, Pin.OUT)
         self.enable_pin = Pin(0, Pin.OUT)
-        self.digital_input1 = Pin(6, Pin.IN, Pin.PULL_UP)
-        self.digital_input2 = Pin(5, Pin.IN, Pin.PULL_UP)
-        self.stop_button = Pin(12, Pin.IN, Pin.PULL_UP)  # Botão para parar a thread
-        self.output1 = Pin(4, Pin.OUT)
-        self.output2 = Pin(3, Pin.OUT)
-        self.antpingo_e1 = Pin(11, Pin.OUT)
-        self.antpingo_e2 = Pin(12, Pin.OUT)
+
+        self.digital_input1 = Pin(6, Pin.IN, Pin.PULL_UP) # Sensor otico envasador 1
+        self.digital_input2 = Pin(5, Pin.IN, Pin.PULL_UP) # Sensor otico envasador 2
+        self.stop_button = Pin(13, Pin.IN, Pin.PULL_UP)  # Botão para parar a thread
+        self.output1 = Pin(4, Pin.OUT) # Aciona rele que ativa envasadora 1
+        self.output2 = Pin(3, Pin.OUT) # Aciona rele que ativa envasadora 2
+
+        self.servo1_pin = Pin(11, Pin.OUT)  # Ajuste o pino conforme necessário
+        self.servo1_pwm = PWM(self.servo1_pin)
+
+        self.servo2_pin = Pin(12, Pin.OUT)  # Ajuste o pino conforme necessário
+        self.servo2_pwm = PWM(self.servo2_pin)
         
-        self.antpingo_e1.value(1) # Inicia desligado
-        self.antpingo_e2.value(1) # Inicia desligado
-        
-        self.botao_1 = Pin(7, Pin.IN, Pin.PULL_UP)
-        self.botao_2 = Pin(10, Pin.IN, Pin.PULL_UP)
+        self.botao_1 = Pin(7, Pin.IN, Pin.PULL_UP) # Entrada do botão 1
+        self.botao_2 = Pin(10, Pin.IN, Pin.PULL_UP) # Entrada do botão 2
 
         self.VOLTA_COMPLETA = 200
         self.ANTI_PINGO_AMBOS = 0 # Se for 0 aciona anti pingo nas duas bombas
@@ -174,20 +176,45 @@ class MotorController:
         print("Enchendo....")
         time.sleep_ms(self.TEMPO_ENCHER)
         self.inicia_motor = True
+
         if acao == self.ANTI_PINGO_AMBOS:
-            self.antpingo_e1.value(0)
-            self.antpingo_e1.value(0)
-            time.sleep_ms(100)
-            self.antpingo_e1.value(1)
-            self.antpingo_e1.value(1)
+            self.controla_servos(90, 90)
         elif acao == self.ANTI_PINGO_E1:
-            self.antpingo_e1.value(0)
-            time.sleep_ms(100)
-            self.antpingo_e1.value(1)
+            self.controla_servos(90, 0)
         elif acao == self.ANTI_PINGO_E2:
-            self.antpingo_e2.value(0)
-            time.sleep_ms(100)
-            self.antpingo_e2.value(1)
+            self.controla_servos(0, 90)
+    
+    def controla_servos(self, angulo1, angulo2, habilita1=True, habilita2=True):
+        # Servo 1
+        if not hasattr(self, 'servo1_pwm'):
+            self.servo1_pwm.freq(50)
+        # Servo 2
+        if not hasattr(self, 'servo2_pwm'):
+            self.servo2_pwm.freq(50)
+
+        min_us = 500
+        max_us = 2500
+
+        if habilita1:
+            us1 = min_us + (max_us - min_us) * angulo1 / 180
+            duty1 = int(us1 * 65535 // 20000)
+            self.servo1_pwm.duty_u16(duty1)
+        if habilita2:
+            us2 = min_us + (max_us - min_us) * angulo2 / 180
+            duty2 = int(us2 * 65535 // 20000)
+            self.servo2_pwm.duty_u16(duty2)
+
+        time.sleep_ms(500)
+
+        # Retorna ambos para 0 grau se habilitados
+        if habilita1:
+            duty1_init = int(min_us * 65535 // 20000)
+            self.servo1_pwm.duty_u16(duty1_init)
+        if habilita2:
+            duty2_init = int(min_us * 65535 // 20000)
+            self.servo2_pwm.duty_u16(duty2_init)
+
+        time.sleep_ms(500)
         
 
     def start(self):
