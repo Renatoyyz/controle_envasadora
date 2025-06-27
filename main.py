@@ -19,11 +19,17 @@ class MotorController:
         self.output2 = Pin(3, Pin.OUT) # Aciona rele que ativa envasadora 2
 
         self.servo1_pin = Pin(11, Pin.OUT)  # Ajuste o pino conforme necessário
-        self.servo1_pwm = PWM(self.servo1_pin)
-
-        self.servo2_pin = Pin(12, Pin.OUT)  # Ajuste o pino conforme necessário
-        self.servo2_pwm = PWM(self.servo2_pin)
         
+        self.servo2_pin = Pin(12, Pin.OUT)  # Ajuste o pino conforme necessário
+        
+        self.servo1_pwm = PWM(self.servo1_pin)
+        self.servo2_pwm = PWM(self.servo2_pin)
+
+        self.servo1_pwm.freq(50)  # Frequência típica para servos é 50 Hz
+        self.servo2_pwm.freq(50) # Frequência típica para servos é 50 Hz
+
+        self.controla_servos(0, 0) # Inicializa os servos em 0 graus
+
         self.botao_1 = Pin(7, Pin.IN, Pin.PULL_UP) # Entrada do botão 1
         self.botao_2 = Pin(10, Pin.IN, Pin.PULL_UP) # Entrada do botão 2
 
@@ -67,7 +73,7 @@ class MotorController:
                 pass
             time.sleep_ms(100)
 
-    # Função para controlar o motor de passo
+    # Função para controlar o mohasattrtor de passo
     def motor_control(self):
         self.enable_pin.value(0)  # Ativa o motor de passo
         while True:
@@ -95,7 +101,7 @@ class MotorController:
                 self.telas.tela_ativa += 1
                 if self.telas.tela_ativa > 3:
                     self.telas.tela_ativa = 1
-                    
+                    hasattr
                 self.telas.executa_tela(self.telas.tela_ativa)
                 
                 if self.telas.tela_ativa == self.telas.TELA_EXECUCAO:
@@ -173,9 +179,7 @@ class MotorController:
             time.sleep_ms(100)  # Pequena pausa para evitar uso excessivo da CPU
             
     def espera_encher(self, acao):
-        print("Enchendo....")
-        time.sleep_ms(self.TEMPO_ENCHER)
-        self.inicia_motor = True
+        # print("Enchendo....")
 
         if acao == self.ANTI_PINGO_AMBOS:
             self.controla_servos(90, 90)
@@ -183,15 +187,12 @@ class MotorController:
             self.controla_servos(90, 0)
         elif acao == self.ANTI_PINGO_E2:
             self.controla_servos(0, 90)
+
+        time.sleep_ms(self.TEMPO_ENCHER)
+        self.inicia_motor = True
     
     def controla_servos(self, angulo1, angulo2, habilita1=True, habilita2=True):
-        # Servo 1
-        if not hasattr(self, 'servo1_pwm'):
-            self.servo1_pwm.freq(50)
-        # Servo 2
-        if not hasattr(self, 'servo2_pwm'):
-            self.servo2_pwm.freq(50)
-
+    
         min_us = 500
         max_us = 2500
 
@@ -204,7 +205,7 @@ class MotorController:
             duty2 = int(us2 * 65535 // 20000)
             self.servo2_pwm.duty_u16(duty2)
 
-        time.sleep_ms(500)
+        time.sleep_ms(400)
 
         # Retorna ambos para 0 grau se habilitados
         if habilita1:
@@ -214,7 +215,7 @@ class MotorController:
             duty2_init = int(min_us * 65535 // 20000)
             self.servo2_pwm.duty_u16(duty2_init)
 
-        time.sleep_ms(500)
+        time.sleep_ms(400)
         
 
     def start(self):
